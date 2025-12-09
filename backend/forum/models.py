@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
 
@@ -45,6 +45,7 @@ class Post(models.Model):
     view_count = models.IntegerField(default=0, verbose_name="浏览次数")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+    likes = GenericRelation('Like', related_query_name='post')
     
     class Meta:
         verbose_name = "帖子"
@@ -93,6 +94,7 @@ class Comment(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+    likes = GenericRelation('Like', related_query_name='comment')
     
     class Meta:
         verbose_name = "评论"
@@ -135,10 +137,3 @@ class Like(models.Model):
     
     def __str__(self):
         return f"{self.user.username} 点赞了 {self.content_object}"
-
-
-# Add reverse relation to Post and Comment for likes
-from django.contrib.contenttypes.fields import GenericRelation
-
-Post.add_to_class('likes', GenericRelation(Like, related_query_name='post'))
-Comment.add_to_class('likes', GenericRelation(Like, related_query_name='comment'))

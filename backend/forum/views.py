@@ -1,8 +1,7 @@
-from django.shortcuts import render
-
 from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from .models import Category, Post, Comment, Like
@@ -77,19 +76,13 @@ class PostViewSet(viewsets.ModelViewSet):
         # Only author or admin can update
         instance = self.get_object()
         if instance.author != self.request.user and not self.request.user.is_staff:
-            return Response(
-                {'detail': '您没有权限修改此帖子'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise PermissionDenied('您没有权限修改此帖子')
         serializer.save()
     
     def perform_destroy(self, instance):
         # Only author or admin can delete
         if instance.author != self.request.user and not self.request.user.is_staff:
-            return Response(
-                {'detail': '您没有权限删除此帖子'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise PermissionDenied('您没有权限删除此帖子')
         instance.delete()
     
     @action(detail=True, methods=['post'])
@@ -150,19 +143,13 @@ class CommentViewSet(viewsets.ModelViewSet):
         # Only author can update
         instance = self.get_object()
         if instance.author != self.request.user:
-            return Response(
-                {'detail': '您没有权限修改此评论'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise PermissionDenied('您没有权限修改此评论')
         serializer.save()
     
     def perform_destroy(self, instance):
         # Only author or admin can delete
         if instance.author != self.request.user and not self.request.user.is_staff:
-            return Response(
-                {'detail': '您没有权限删除此评论'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise PermissionDenied('您没有权限删除此评论')
         instance.delete()
     
     @action(detail=True, methods=['post'])
