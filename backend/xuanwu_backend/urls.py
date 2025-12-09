@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/forum/', include('forum.urls')),
     path('api/ratings/', include('ratings.urls')),
     path('api/resources/', include('resources.urls')),
+    path('api/treehole/', include('treehole.urls')),
 ]
 
 # Serve media files in development
