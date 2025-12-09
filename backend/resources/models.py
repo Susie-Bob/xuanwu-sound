@@ -6,7 +6,6 @@ import os
 
 def resource_file_path(instance, filename):
     """Generate upload path for resource files"""
-    ext = filename.split('.')[-1]
     category = instance.category.name if instance.category else 'other'
     return f'resources/{category}/{instance.id or "temp"}_{filename}'
 

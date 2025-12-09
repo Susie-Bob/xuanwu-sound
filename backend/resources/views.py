@@ -1,5 +1,3 @@
-from django.shortcuts import render
-
 from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -114,15 +112,16 @@ class ResourceViewSet(viewsets.ModelViewSet):
         if not resource.file:
             raise Http404("文件不存在")
         
-        # Record download
+        # Record download with transaction
         if request.user.is_authenticated:
-            ResourceDownload.objects.create(
-                resource=resource,
-                user=request.user,
-                ip_address=get_client_ip(request)
-            )
-            # Increment download count atomically
-            Resource.objects.filter(pk=resource.pk).update(download_count=F('download_count') + 1)
+            with transaction.atomic():
+                ResourceDownload.objects.create(
+                    resource=resource,
+                    user=request.user,
+                    ip_address=get_client_ip(request)
+                )
+                # Increment download count atomically
+                Resource.objects.filter(pk=resource.pk).update(download_count=F('download_count') + 1)
         
         # Return file response
         try:
@@ -146,7 +145,7 @@ class ResourceViewSet(viewsets.ModelViewSet):
         serializer = ResourceCommentSerializer(comments, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def my_uploads(self, request):
         """获取我上传的资源"""
         resources = Resource.objects.filter(uploader=request.user).order_by('-created_at')
@@ -158,7 +157,7 @@ class ResourceViewSet(viewsets.ModelViewSet):
         serializer = ResourceListSerializer(resources, many=True, context={'request': request})
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def my_downloads(self, request):
         """获取我下载的资源"""
         downloads = ResourceDownload.objects.filter(user=request.user).select_related('resource').order_by('-downloaded_at')
