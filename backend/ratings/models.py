@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Avg
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -56,9 +57,9 @@ class Teacher(models.Model):
     @property
     def average_rating(self):
         """平均评分"""
-        ratings = self.ratings.all()
-        if ratings:
-            return round(sum(r.score for r in ratings) / len(ratings), 1)
+        result = self.ratings.aggregate(avg=Avg('score'))
+        if result['avg']:
+            return round(result['avg'], 1)
         return 0
     
     @property
@@ -96,9 +97,9 @@ class Canteen(models.Model):
     @property
     def average_rating(self):
         """平均评分"""
-        ratings = self.ratings.all()
-        if ratings:
-            return round(sum(r.score for r in ratings) / len(ratings), 1)
+        result = self.ratings.aggregate(avg=Avg('score'))
+        if result['avg']:
+            return round(result['avg'], 1)
         return 0
     
     @property

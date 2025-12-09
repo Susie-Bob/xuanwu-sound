@@ -1,11 +1,10 @@
-from django.shortcuts import render
-
 from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, F
+from django.db import transaction
 from .models import Tag, Teacher, Canteen, Rating, HelpfulMark
 from .serializers import (
     TagSerializer,
@@ -78,7 +77,7 @@ class TeacherViewSet(viewsets.ModelViewSet):
         ratings = Rating.objects.filter(
             content_type=content_type,
             object_id=teacher.id
-        ).order_by('-created_at')
+        ).prefetch_related('tags').select_related('user').order_by('-created_at')
         
         # Pagination
         page = self.paginate_queryset(ratings)
@@ -97,7 +96,7 @@ class TeacherViewSet(viewsets.ModelViewSet):
         ratings = Rating.objects.filter(
             content_type=content_type,
             object_id=teacher.id
-        )
+        ).prefetch_related('tags')
         
         # Score distribution
         score_distribution = {}
@@ -153,7 +152,7 @@ class CanteenViewSet(viewsets.ModelViewSet):
         ratings = Rating.objects.filter(
             content_type=content_type,
             object_id=canteen.id
-        ).order_by('-created_at')
+        ).prefetch_related('tags').select_related('user').order_by('-created_at')
         
         # Pagination
         page = self.paginate_queryset(ratings)
@@ -172,7 +171,7 @@ class CanteenViewSet(viewsets.ModelViewSet):
         ratings = Rating.objects.filter(
             content_type=content_type,
             object_id=canteen.id
-        )
+        ).prefetch_related('tags')
         
         # Score distribution
         score_distribution = {}
@@ -270,20 +269,21 @@ class RatingViewSet(viewsets.ModelViewSet):
         """标记评价为有用/取消标记"""
         rating = self.get_object()
         
-        helpful_mark, created = HelpfulMark.objects.get_or_create(
-            user=request.user,
-            rating=rating
-        )
-        
-        if not created:
-            helpful_mark.delete()
-            rating.helpful_count = max(0, rating.helpful_count - 1)
-            rating.save(update_fields=['helpful_count'])
-            return Response({'message': '已取消标记', 'marked': False})
-        
-        rating.helpful_count += 1
-        rating.save(update_fields=['helpful_count'])
-        return Response({'message': '已标记为有用', 'marked': True})
+        with transaction.atomic():
+            helpful_mark, created = HelpfulMark.objects.get_or_create(
+                user=request.user,
+                rating=rating
+            )
+            
+            if not created:
+                helpful_mark.delete()
+                # Use F() expression for atomic decrement
+                Rating.objects.filter(pk=rating.pk).update(helpful_count=F('helpful_count') - 1)
+                return Response({'message': '已取消标记', 'marked': False})
+            
+            # Use F() expression for atomic increment
+            Rating.objects.filter(pk=rating.pk).update(helpful_count=F('helpful_count') + 1)
+            return Response({'message': '已标记为有用', 'marked': True})
     
     @action(detail=False, methods=['get'])
     def my_ratings(self, request):
