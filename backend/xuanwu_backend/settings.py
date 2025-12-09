@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'users',
     'forum',
     'ratings',
+    'resources',
 ]
 
 MIDDLEWARE = [
