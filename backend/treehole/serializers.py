@@ -36,10 +36,12 @@ class TreeholeCommentSerializer(serializers.ModelSerializer):
 
 class TreeholeCommentCreateSerializer(serializers.ModelSerializer):
     """树洞评论创建序列化器"""
+    anonymous_name = serializers.CharField(read_only=True)
     
     class Meta:
         model = TreeholeComment
-        fields = ('post', 'content', 'parent')
+        fields = ('post', 'content', 'parent', 'anonymous_name', 'id', 'created_at')
+        read_only_fields = ('anonymous_name', 'id', 'created_at')
     
     def validate(self, attrs):
         # Validate parent comment belongs to the same post
@@ -112,10 +114,12 @@ class TreeholePostDetailSerializer(serializers.ModelSerializer):
 
 class TreeholePostCreateSerializer(serializers.ModelSerializer):
     """树洞帖子创建序列化器"""
+    anonymous_name = serializers.CharField(read_only=True)
     
     class Meta:
         model = TreeholePost
-        fields = ('content', 'images', 'post_type')
+        fields = ('content', 'images', 'post_type', 'anonymous_name', 'id', 'created_at')
+        read_only_fields = ('anonymous_name', 'id', 'created_at')
     
     def validate_images(self, value):
         """验证图片列表"""
