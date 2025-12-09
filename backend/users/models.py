@@ -12,9 +12,9 @@ class User(AbstractUser):
         ('ALUMNI', '校友'),
     ]
     
-    real_name = models.CharField(max_length=50, verbose_name="真实姓名")
-    student_id = models.CharField(max_length=20, unique=True, verbose_name="学号/工号")
-    identity_type = models.CharField(max_length=20, choices=IDENTITY_CHOICES, verbose_name="身份类型")
+    real_name = models.CharField(max_length=50, blank=True, verbose_name="真实姓名")
+    student_id = models.CharField(max_length=20, unique=True, blank=True, null=True, verbose_name="学号/工号")
+    identity_type = models.CharField(max_length=20, choices=IDENTITY_CHOICES, blank=True, verbose_name="身份类型")
     is_verified = models.BooleanField(default=False, verbose_name="是否实名认证")
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, verbose_name="头像")
     
