@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'forum',
     'ratings',
     'resources',
+    'treehole',
 ]
 
 MIDDLEWARE = [
