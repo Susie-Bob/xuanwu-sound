@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from datetime import timedelta
 
 
@@ -135,11 +136,29 @@ class TreeholeLike(models.Model):
     class Meta:
         verbose_name = "树洞点赞"
         verbose_name_plural = "树洞点赞"
-        unique_together = [['user', 'post'], ['user', 'comment']]
         indexes = [
             models.Index(fields=['user']),
             models.Index(fields=['post']),
             models.Index(fields=['comment']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'post'],
+                condition=models.Q(post__isnull=False, comment__isnull=True),
+                name='unique_user_post_like'
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'comment'],
+                condition=models.Q(comment__isnull=False, post__isnull=True),
+                name='unique_user_comment_like'
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(post__isnull=False, comment__isnull=True) |
+                    models.Q(post__isnull=True, comment__isnull=False)
+                ),
+                name='like_post_or_comment_only'
+            ),
         ]
     
     def __str__(self):
@@ -147,10 +166,9 @@ class TreeholeLike(models.Model):
             return f"{self.user.username} 点赞了帖子"
         return f"{self.user.username} 点赞了评论"
     
-    def save(self, *args, **kwargs):
-        # Validate that either post or comment is set (but not both)
+    def clean(self):
+        """验证只能点赞帖子或评论之一"""
         if not self.post and not self.comment:
-            raise ValueError("必须点赞帖子或评论")
+            raise ValidationError("必须点赞帖子或评论")
         if self.post and self.comment:
-            raise ValueError("不能同时点赞帖子和评论")
-        super().save(*args, **kwargs)
+            raise ValidationError("不能同时点赞帖子和评论")

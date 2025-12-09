@@ -52,8 +52,7 @@ class TreeholePostViewSet(viewsets.ModelViewSet):
         
         like, created = TreeholeLike.objects.get_or_create(
             user=request.user,
-            post=post,
-            defaults={'comment': None}
+            post=post
         )
         
         if not created:
@@ -119,8 +118,7 @@ class TreeholeCommentViewSet(viewsets.ModelViewSet):
         
         like, created = TreeholeLike.objects.get_or_create(
             user=request.user,
-            comment=comment,
-            defaults={'post': None}
+            comment=comment
         )
         
         if not created:
